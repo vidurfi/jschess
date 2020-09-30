@@ -1,0 +1,15 @@
+
+[
+    {
+        "username": "Vid",
+        "password": "password",
+        "email": "vid@email.com",
+        "games": [ "1", "2", "3"] 
+    },
+    {
+        "username": "Bob",
+        "password": "pass",
+        "email": "bob@email.com",
+        "games": [ "1", "2", "3"] 
+    }
+]
