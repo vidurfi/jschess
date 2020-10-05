@@ -6,35 +6,58 @@ const bcrypt = require('bcrypt')
 const {MongoClient, connect} = require('mongodb')
 
 /**
- * Connection URI. Update <username>, <password>, and <your-cluster-url> to reflect your cluster.
- * See https://docs.mongodb.com/ecosystem/drivers/node/ for more details
- */
+ * Connection URI. 
+ * */
 const uri = "mongodb+srv://"+process.env.CHESS_AUTH_SERVER_USERNAME+":"+process.env.CHESS_AUTH_SERVER_PASS+"@"+process.env.MONGO_CLUSTER+".g4ru6.mongodb.net/?retryWrites=true&w=majority";
 
 const app = express()
 
 app.use(express.json())
 
-const users = []
-
-let refreshTokens = [] //Database :MONGO?
-
-app.post('/token', (req, res) => {
+app.post('/token', async (req, res) => {
   const refreshToken = req.body.token
   if (refreshToken == null) return res.sendStatus(401)
-  if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403)
-    const accessToken = generateAccessToken({ email: user.email })
-    res.json({ accessToken: accessToken })
-  })
+  const client = new MongoClient(uri, { useUnifiedTopology: true, useNewUrlParser: true, }) 
+  try {
+    await client.connect()
+    const refreshTokens = client.db("chess-auth").collection("refresh-tokens")
+    const queryToken = { token: refreshToken }
+    refreshTokens.findOneAndDelete(queryToken, async (err, result) => {
+      if (err) {
+        client.close()
+        return res.status(500).send(err.message)
+      }
+      if (result.value === null) {
+        client.close()
+        return res.sendStatus(403)
+      } else {
+        jwt.verify(result.value.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+          if (err) return res.sendStatus(403)
+          const accessToken = generateAccessToken({ email: user.email })
+          const newRefreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, {expiresIn: '3 days'}) //TODO: fix payload
+          const token = {
+            token: newRefreshToken
+          }
+          refreshTokens.insertOne(token, () => {
+            client.close()
+          }) 
+          return res.json({ accessToken: accessToken, refreshToken: newRefreshToken })
+        })
+      }
+    })
+  } catch {
+    client.close()
+    return res.sendStatus(500)
+  }
 })
 
 app.post('/login', async (req, res) =>{
+  const client = new MongoClient(uri, { useUnifiedTopology: true, useNewUrlParser: true, })
   try {
-    const client = new MongoClient(uri)
     await client.connect()
-    const users = client.db("chess-auth").collection("user-data")
+    const database = client.db("chess-auth")
+    const users = database.collection("user-data")
+    const refreshTokens = database.collection("refresh-tokens")
     const queryEmail = { email: req.body.email }
     users.findOne(queryEmail, async (err, result) => {
       if (err) {
@@ -53,7 +76,10 @@ app.post('/login', async (req, res) =>{
         if (same) {
           const accessToken = generateAccessToken(result)
           const refreshToken = jwt.sign(result, process.env.REFRESH_TOKEN_SECRET)
-          //refreshTokens.push(refreshToken) //TODO: Add refresh token to token database
+          const token = {
+            token: refreshToken
+          }
+          refreshTokens.insertOne(token)
           client.close()
           return res.json({ accessToken: accessToken, refreshToken: refreshToken }).status(200).send()
         } else {
@@ -69,8 +95,8 @@ app.post('/login', async (req, res) =>{
 })
 
 app.post('/register', async (req, res) =>{
+  const client = new MongoClient(uri, { useUnifiedTopology: true, useNewUrlParser: true, })
   try{
-    const client = new MongoClient(uri)
     await client.connect()
     const users = client.db("chess-auth").collection("user-data")
     const queryEmail = { email: req.body.email }
