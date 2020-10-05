@@ -1,3 +1,3 @@
 # jschess
 
-A simple chess backend using APIs.
+A simple chess backend using node and APIs.
