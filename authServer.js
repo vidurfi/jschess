@@ -8,7 +8,7 @@ const {MongoClient, connect} = require('mongodb')
 /**
  * Connection URI. 
  * */
-const uri = "mongodb+srv://"+process.env.CHESS_AUTH_SERVER_USERNAME+":"+process.env.CHESS_AUTH_SERVER_PASS+"@"+process.env.MONGO_CLUSTER+".g4ru6.mongodb.net/?retryWrites=true&w=majority";
+const mongoURI = process.env.MONGO_AUTH_URI;
 
 const app = express()
 
@@ -17,7 +17,7 @@ app.use(express.json())
 app.post('/token', async (req, res) => {
   const refreshToken = req.body.token
   if (refreshToken == null) return res.sendStatus(401)
-  const client = new MongoClient(uri, { useUnifiedTopology: true, useNewUrlParser: true, }) 
+  const client = new MongoClient(mongoURI, { useUnifiedTopology: true, useNewUrlParser: true, }) 
   try {
     await client.connect()
     const refreshTokens = client.db("chess-auth").collection("refresh-tokens")
@@ -52,50 +52,47 @@ app.post('/token', async (req, res) => {
 })
 
 app.post('/login', async (req, res) =>{
-  const client = new MongoClient(uri, { useUnifiedTopology: true, useNewUrlParser: true, })
+  const client = new MongoClient(mongoURI, { useUnifiedTopology: true, useNewUrlParser: true, })
   try {
     await client.connect()
     const database = client.db("chess-auth")
     const users = database.collection("user-data")
     const refreshTokens = database.collection("refresh-tokens")
     const queryEmail = { email: req.body.email }
-    users.findOne(queryEmail, async (err, result) => {
+    users.findOne(queryEmail, (err, result) => {
       if (err) {
-        client.close()
-        return res.status(500).send(err.message)
-      }
+        res.status(500).send(err.message + " 1")
+      } else
       if (result === null){
-        client.close()
-        return res.status(400).send('Password or email is incorrect!')
-      }
+        res.status(400).send('Password or email is incorrect!')
+      } else
       bcrypt.compare(req.body.password, result.password, (err, same) => {
         if (err) {
-          client.close()
-          return res.status(500).send(err.message)
-        }
+          res.status(500).send(err.message + " 2")
+        } else
         if (same) {
           const accessToken = generateAccessToken(result)
           const refreshToken = jwt.sign(result, process.env.REFRESH_TOKEN_SECRET)
           const token = {
             token: refreshToken
           }
-          refreshTokens.insertOne(token)
-          client.close()
-          return res.json({ accessToken: accessToken, refreshToken: refreshToken }).status(200).send()
+          refreshTokens.insertOne(token);
+          res.json({ accessToken: accessToken, refreshToken: refreshToken }).status(200).send()
         } else {
-          client.close()
-          return res.status(400).send('Password or email is incorrect!')
+          res.status(400).send('Password or email is incorrect!')
         }
       })
+    }, () => {
+      client.close()
     })
   } catch {
     client.close()
-    return res.sendStatus(500)
+    res.sendStatus(500)
   } 
 })
 
 app.post('/register', async (req, res) =>{
-  const client = new MongoClient(uri, { useUnifiedTopology: true, useNewUrlParser: true, })
+  const client = new MongoClient(mongoURI, { useUnifiedTopology: true, useNewUrlParser: true, })
   try{
     await client.connect()
     const users = client.db("chess-auth").collection("user-data")
