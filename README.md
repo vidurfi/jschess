@@ -1,3 +1,5 @@
 # jschess
 
-A simple chess backend using node and APIs.
+A simple chess app using node and APIs.
+
+I am trying to create something similar to https://online-go.com/.
