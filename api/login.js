@@ -2,9 +2,11 @@ const functions = require('../lib/functions.js')
 const { check, validationResult } = require('express-validator');
 const express = require('express');
 const router = express.Router();
-const {MongoClient, connect} = require('mongodb')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const mongoose = require('mongoose')
+
+const User = require('../schema/user')
 
 // @route  POST api/login
 // @desc   Authenticate user and get token
@@ -15,7 +17,18 @@ router.post('/',
         check('password', 'Please include a password!').exists(),
     ],
     async (req, res) =>{
-    const client = new MongoClient(process.env.MONGO_AUTH_URI, { useUnifiedTopology: true, useNewUrlParser: true, })
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    mongoose.connect(process.env.MONGO_AUTH_URI, { useNewUrlParser: true });
+    const db = mongoose.connection
+    db.on('error', console.error.bind(console, 'connection error: '))
+    db.once('open', () => {
+        const user = mongoose.model()
+    })
+
+
     try {
       await client.connect()
       const database = client.db("chess-auth")
