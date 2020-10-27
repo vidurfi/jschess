@@ -1,17 +1,18 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "It is the backend for the CoG IMSE project",
+  "description": "Backend for jsChess",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "author": "vid,qmoul",
+  "author": "Adam Szep",
   "license": "UNLICENSED",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "config": "^3.3.1",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-validator": "^6.4.1",
     "jsonwebtoken": "^8.5.1",
@@ -23,12 +24,5 @@
     "sequelize": "^5.21.7"
   },
   "devDependencies": {},
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Qmoul/CoG-backend.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Qmoul/CoG-backend/issues"
-  },
-  "homepage": "https://github.com/Qmoul/CoG-backend#readme"
+  "keywords": []
 }

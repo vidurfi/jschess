@@ -1,5 +1,7 @@
+require('dotenv').config()
+
 const mongoose = require('mongoose');
-const db = 'mongodb://cogdatabasemongo:27017';
+const db = process.env.CONNECTION_URI;
 mongoose.set('debug', true);
 const connectDBMongo = async () => {
   try {
@@ -9,7 +11,6 @@ const connectDBMongo = async () => {
       useFindAndModify: false,
       useUnifiedTopology: true,
     });
-
     console.log('MongoDB Connected...');
   } catch (err) {
     console.error(err.message);

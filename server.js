@@ -1,13 +1,6 @@
 const express = require('express');
-const connectDB = require('./config/db');
 const connectDBMongo = require('./config/dbmongo');
 const app = express();
-
-// Connection to the database
-connectDB
-  .authenticate()
-  .then(() => console.log('Database connected'))
-  .catch((err) => console.log('Error: ' + err));
 
 connectDBMongo();
 
@@ -26,10 +19,8 @@ app.use(function (req, res, next) {
   );
   next();
 });
-app.use('/restapi/auth', require('./restapi/auth'));
-app.use('/restapi/users', require('./restapi/users'));
-app.use('/restapi/parties', require('./restapi/parties'));
-app.use('/restapi/activity', require('./restapi/activity'));
+app.use('/api/login', require('./api/login'));
+app.use('/api/register', require('./api/register'));
 
 const PORT = process.env.PORT || 5017;
 
